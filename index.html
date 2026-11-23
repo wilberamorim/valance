@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Valance - Gestão e Vendas para Lojas</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<style>
+  :root { color-scheme: dark; box-sizing: border-box; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px);
+    --bg:#0d1117; --fg:#f0f6fc; --card:#161b22; --line:#30363d; --accent:#a3e635; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#0d1117; --fg:#f0f6fc; --card:#161b22; --line:#30363d; --accent:#a3e635; } }
+  :root[data-theme="dark"] { --bg:#0d1117; --fg:#f0f6fc; --card:#161b22; --line:#30363d; --accent:#a3e635; }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--fg); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  body::before { content:""; position:fixed; inset:0 0 auto; height: env(safe-area-inset-top, 0px); background: var(--bg); z-index:10; }
+  .accent-color { color: var(--accent); }
+  .bg-accent { background: var(--accent); color: #0d1117; }
+  .card-bg { background: var(--card); border: 1px solid var(--line); }
+  .glow { position:fixed; top:-120px; left:50%; width:420px; height:420px; transform:translateX(-50%); background: radial-gradient(circle, rgba(163,230,53,.18), transparent 65%); pointer-events:none; z-index:0; animation: breathe 6s ease-in-out infinite; }
+  @keyframes breathe { 50% { opacity:.55; transform:translateX(-50%) scale(1.15); } }
+  .reveal { opacity:0; transform: translateY(18px); transition: opacity .6s ease, transform .6s ease; }
+  .reveal.in { opacity:1; transform:none; }
+  .lift { transition: transform .2s ease, border-color .2s ease; }
+  .lift:hover { transform: translateY(-3px); }
+  button:active { transform: scale(.96); }
+  button { transition: transform .15s ease, opacity .2s ease, background .2s ease; }
+  .pulse-dot { animation: pulse 1.6s infinite; }
+  @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(163,230,53,.7);} 100%{box-shadow:0 0 0 10px rgba(163,230,53,0);} }
+  .bar { transition: width 1.4s cubic-bezier(.2,.8,.2,1); }
+  .shine { position:relative; overflow:hidden; }
+  .shine::after { content:""; position:absolute; top:0; left:-60%; width:40%; height:100%; background:linear-gradient(100deg,transparent,rgba(255,255,255,.35),transparent); transform:skewX(-20deg); animation: shine 3.2s infinite; }
+  @keyframes shine { 60%,100% { left:130%; } }
+  #toast { position:fixed; left:50%; bottom:calc(20px + env(safe-area-inset-bottom, 0px)); transform:translate(-50%,30px); opacity:0; transition:.3s; z-index:20; }
+  #toast.show { opacity:1; transform:translate(-50%,0); }
+  @media (prefers-reduced-motion: reduce) { *,*::after { animation:none !important; transition:none !important; } .reveal { opacity:1; transform:none; } }
+</style>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-4 md:p-8 max-w-xl mx-auto">
+<div class="glow"></div>
+
+<header class="text-center my-6 relative z-[1] reveal">
+  <div class="inline-flex items-center gap-2 bg-lime-950 text-lime-400 font-bold text-xs uppercase tracking-wider px-3 py-1 rounded-full mb-3 border border-lime-800">
+    <span class="w-2 h-2 rounded-full bg-lime-400 pulse-dot"></span> Valance CRM &amp; Gestão
+  </div>
+  <h1 class="text-3xl font-extrabold tracking-tight">Transforme contatos em <span class="accent-color">faturamento real</span>.</h1>
+  <p class="text-gray-400 text-sm mt-2">Agendas de vendas, acompanhamento da equipe em tempo real e retorno financeiro na palma da mão.</p>
+</header>
+
+<main class="space-y-6 relative z-[1]">
+
+  <!-- PRÉVIA AO VIVO -->
+  <div class="card-bg p-5 rounded-2xl reveal">
+    <div class="flex items-center justify-between mb-3">
+      <h4 class="text-sm font-bold text-gray-200">Painel do dia</h4>
+      <span class="text-[10px] text-lime-400 font-bold uppercase tracking-wider flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-lime-400 pulse-dot"></span> Ao vivo</span>
+    </div>
+    <div class="flex justify-between text-xs text-gray-400 mb-1"><span>Agendas concluídas</span><span id="pct" class="font-bold text-white">0%</span></div>
+    <div class="h-2.5 bg-gray-800 rounded-full overflow-hidden"><div id="bar" class="bar h-full rounded-full bg-lime-400" style="width:0%"></div></div>
+    <div class="grid grid-cols-3 gap-2 mt-4 text-center">
+      <div class="bg-gray-900 rounded-xl p-2.5 border border-gray-800"><div class="text-[10px] text-gray-500">Faturamento</div><div id="fat" class="text-sm font-black accent-color">R$ 0</div></div>
+      <div class="bg-gray-900 rounded-xl p-2.5 border border-gray-800"><div class="text-[10px] text-gray-500">Ticket médio</div><div id="tk" class="text-sm font-black text-white">R$ 0</div></div>
+      <div class="bg-gray-900 rounded-xl p-2.5 border border-gray-800"><div class="text-[10px] text-gray-500">P.A.</div><div id="pa" class="text-sm font-black text-white">0,0</div></div>
+    </div>
+  </div>
+
+  <!-- PLANO SIMPLES -->
+  <div class="card-bg lift p-6 rounded-2xl relative reveal">
+    <h3 class="text-xl font-bold">Plano Simples</h3>
+    <p class="text-gray-400 text-xs mt-1">Organização diária e foco no vendedor.</p>
+    <ul class="text-xs text-gray-300 my-4 space-y-2">
+      <li>✓ Agendas do dia (Pendentes &amp; Concluídas)</li>
+      <li>✓ Indicador de progresso (%)</li>
+      <li>✓ Pesquisa rápida por CPF ou Nome</li>
+    </ul>
+    <div class="bg-gray-900 p-3 rounded-xl mb-4 border border-gray-800 flex justify-between items-center text-xs">
+      <span class="text-gray-400">Taxa de Instalação/Setup:</span>
+      <span class="font-bold text-white">R$ 350,00 <span class="text-[10px] text-gray-500 font-normal">(taxa única)</span></span>
+    </div>
+    <div class="flex items-baseline justify-between pt-2 border-t border-gray-800">
+      <div>
+        <span class="text-xs text-gray-400">Mensalidade</span>
+        <div class="text-2xl font-black accent-color">R$ 149<span class="text-xs font-normal text-gray-400">/mês</span></div>
+      </div>
+      <button onclick="contratarPlano('Simples', 149, 350)" class="bg-gray-800 hover:bg-gray-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl border border-gray-600">Selecionar Plano</button>
+    </div>
+  </div>
+
+  <!-- PLANO INTERMEDIÁRIO -->
+  <div class="card-bg lift p-6 rounded-2xl relative border-2 border-lime-400 reveal">
+    <div class="absolute -top-3 right-6 bg-lime-400 text-black text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full">Mais Recomendado</div>
+    <h3 class="text-xl font-bold">Plano Intermediário</h3>
+    <p class="text-gray-400 text-xs mt-1">Gestão de equipe, P.A. e faturamento por agenda.</p>
+    <ul class="text-xs text-gray-300 my-4 space-y-2">
+      <li>✓ <strong>Tudo do Plano Simples</strong></li>
+      <li>✓ Relatório <strong>Gerou por Loja</strong> (Faturamento e Ticket Médio)</li>
+      <li>✓ Relatório <strong>Real Time</strong> (Total de vendas e P.A. por vendedor)</li>
+      <li>✓ Compartilhamento rápido de relatórios da equipe</li>
+    </ul>
+    <div class="bg-gray-900 p-3 rounded-xl mb-4 border border-gray-800 flex justify-between items-center text-xs">
+      <span class="text-gray-400">Taxa de Instalação/Setup:</span>
+      <span class="font-bold text-lime-400">R$ 600,00 <span class="text-[10px] text-gray-500 font-normal">(taxa única)</span></span>
+    </div>
+    <div class="flex items-baseline justify-between pt-2 border-t border-gray-800">
+      <div>
+        <span class="text-xs text-gray-400">Mensalidade</span>
+        <div class="text-2xl font-black accent-color">R$ 299<span class="text-xs font-normal text-gray-400">/mês</span></div>
+      </div>
+      <button onclick="contratarPlano('Intermediário', 299, 600)" class="bg-accent shine font-bold text-xs px-5 py-2.5 rounded-xl">Garantir Plano</button>
+    </div>
+  </div>
+
+  <!-- PERSONALIZADO -->
+  <div class="card-bg lift p-6 rounded-2xl reveal">
+    <h3 class="text-xl font-bold">Personalizado / Redes</h3>
+    <p class="text-gray-400 text-xs mt-1">Para operações que precisam de conexões e rotinas exclusivas.</p>
+    <ul class="text-xs text-gray-300 my-4 space-y-2">
+      <li>✓ Perfis de acesso diferenciados (Gerente / Vendedor)</li>
+      <li>✓ Conexão com a base de vendas / ERP da loja</li>
+      <li>✓ Relatórios e metas customizadas</li>
+    </ul>
+    <div class="flex items-center justify-between pt-2 border-t border-gray-800">
+      <div>
+        <span class="text-xs text-gray-400">Instalação + Mensalidade</span>
+        <div class="text-lg font-bold text-white">Sob Consulta</div>
+      </div>
+      <button onclick="chamarNoPrivado()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl">Falar no Privado</button>
+    </div>
+  </div>
+
+  <!-- SIMULADOR -->
+  <div class="card-bg p-6 rounded-2xl border-dashed reveal">
+    <h4 class="text-sm font-bold text-gray-300 mb-2">💡 Quer calcular com recursos extras?</h4>
+    <div class="space-y-3 text-xs">
+      <div>
+        <label class="text-gray-400">Escolha o plano inicial:</label>
+        <select id="plano_base" onchange="calcularEstimativa()" class="w-full mt-1 bg-gray-900 border border-gray-700 rounded-lg p-2 text-white">
+          <option value="149" data-setup="350">Plano Simples (R$ 149/mês + R$ 350 setup)</option>
+          <option value="299" data-setup="600" selected>Plano Intermediário (R$ 299/mês + R$ 600 setup)</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-gray-400">Tamanho da equipe:</label>
+        <select id="vendedores" onchange="calcularEstimativa()" class="w-full mt-1 bg-gray-900 border border-gray-700 rounded-lg p-2 text-white">
+          <option value="0">Até 5 vendedores (+ R$ 0)</option>
+          <option value="50">De 6 a 12 vendedores (+ R$ 50/mês)</option>
+          <option value="120">Mais de 12 vendedores (+ R$ 120/mês)</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-gray-400">Adicional:</label>
+        <div class="mt-1 space-y-1.5">
+          <label class="flex items-center gap-2">
+            <input type="checkbox" id="add_erp" onchange="calcularEstimativa()" class="accent-lime-400">
+            <span>Integração ERP/Banco de Dados da Loja (+ R$ 100/mês)</span>
+          </label>
+        </div>
+      </div>
+      <div class="p-3 bg-gray-900 rounded-xl space-y-1 mt-3">
+        <div class="flex justify-between text-gray-400"><span>Mensalidade estimada:</span><span id="valor_mensal" class="font-bold text-white">R$ 299/mês</span></div>
+        <div class="flex justify-between text-gray-400"><span>Taxa de instalação (Setup):</span><span id="valor_setup" class="font-bold text-lime-400">R$ 600,00</span></div>
+      </div>
+      <button onclick="enviarSimulacao()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold py-3 rounded-xl flex items-center justify-center gap-2">Enviar Proposta no WhatsApp 🚀</button>
+    </div>
+  </div>
+</main>
+
+<footer class="text-center text-xs text-gray-500 my-6 relative z-[1]">Valance OS © 2026. Todos os direitos reservados.</footer>
+
+<div id="toast" class="bg-lime-400 text-black text-xs font-bold px-4 py-2 rounded-full shadow-lg">Abrindo o WhatsApp…</div>
+
+<script>
+  // === CONFIGURE SEU NÚMERO DE WHATSAPP AQUI ===
+  const SEU_WHATSAPP = "5521993195265";
+
+  function calcularEstimativa() {
+    const sel = document.getElementById('plano_base');
+    const base = parseInt(sel.value);
+    const setup = parseInt(sel.options[sel.selectedIndex].getAttribute('data-setup'));
+    const addV = parseInt(document.getElementById('vendedores').value);
+    const addErp = document.getElementById('add_erp').checked ? 100 : 0;
+    const total = base + addV + addErp;
+    document.getElementById('valor_mensal').innerText = `R$ ${total}/mês`;
+    document.getElementById('valor_setup').innerText = `R$ ${setup},00`;
+    return { mensalidade: total, setup: setup };
+  }
+
+  function contratarPlano(nome, mensalidade, setup) {
+    abrirWhatsApp(`Olá! Vi o site no Instagram e quero fechar o *Plano ${nome}* do Valance.\n\n` +
+      `💳 *Mensalidade:* R$ ${mensalidade}/mês\n🛠 *Instalação (Setup):* R$ ${setup},00\n\n` +
+      `Podemos alinhar o pagamento e a instalação?`);
+  }
+
+  function chamarNoPrivado() {
+    abrirWhatsApp(`Olá! Vi o site no Instagram e preciso de uma solução *Personalizada* para a minha loja. Vamos conversar no privado!`);
+  }
+
+  function enviarSimulacao() {
+    const d = calcularEstimativa();
+    const sel = document.getElementById('plano_base');
+    abrirWhatsApp(`Olá! Montei uma estimativa do Valance pelo site:\n\n` +
+      `📌 *Plano:* ${sel.options[sel.selectedIndex].text}\n💳 *Mensalidade Estimada:* R$ ${d.mensalidade}/mês\n` +
+      `🛠 *Taxa de Instalação:* R$ ${d.setup},00\n\nQuero tirar umas dúvidas e agendar a instalação!`);
+  }
+
+  function abrirWhatsApp(texto) {
+    const url = `https://wa.me/${SEU_WHATSAPP}?text=${encodeURIComponent(texto)}`;
+    const t = document.getElementById('toast');
+    t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1800);
+    const w = window.open(url, '_blank');
+    if (!w) { try { window.top.location.href = url; } catch (e) { location.href = url; } }
+  }
+
+  // Animação de números e barra do painel
+  function anima(el, fim, fmt, dur) {
+    const ini = performance.now();
+    (function passo(t) {
+      const p = Math.min((t - ini) / dur, 1), e = 1 - Math.pow(1 - p, 3);
+      el.textContent = fmt(fim * e);
+      if (p < 1) requestAnimationFrame(passo);
+    })(ini);
+  }
+  const brl = v => 'R$ ' + Math.round(v).toLocaleString('pt-BR');
+  function painel() {
+    document.getElementById('bar').style.width = '78%';
+    anima(document.getElementById('pct'), 78, v => Math.round(v) + '%', 1400);
+    anima(document.getElementById('fat'), 18450, brl, 1600);
+    anima(document.getElementById('tk'), 307, brl, 1600);
+    anima(document.getElementById('pa'), 2.4, v => v.toFixed(1).replace('.', ','), 1600);
+  }
+
+  // Aparecer ao rolar
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .12 });
+  document.querySelectorAll('.reveal').forEach((el, i) => { el.style.transitionDelay = (i * 60) + 'ms'; io.observe(el); });
+
+  calcularEstimativa();
+  setTimeout(painel, 500);
+  setInterval(() => { // pequenas atualizações “ao vivo”
+    const p = 78 + Math.floor(Math.random() * 12);
+    document.getElementById('bar').style.width = p + '%';
+    document.getElementById('pct').textContent = p + '%';
+  }, 4000);
+</script>
+</body>
+</html>
